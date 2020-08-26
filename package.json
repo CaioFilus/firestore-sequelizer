@@ -1,0 +1,25 @@
+{
+  "name": "firestore-sequelizer",
+  "version": "0.0.1",
+  "description": "A simple orm Firestore to feels like in Sequelize",
+  "main": "model.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CaioFilus/firestore-sequelizer.git"
+  },
+  "keywords": [
+    "npm",
+    "firestore",
+    "sequelize",
+    "nosql"
+  ],
+  "author": "Caio Filus Felisbino",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/CaioFilus/firestore-sequelizer/issues"
+  },
+  "homepage": "https://github.com/CaioFilus/firestore-sequelizer#readme",
+  "dependencies": {
+    "firebase-admin": "^9.1.1"
+  }
+}
