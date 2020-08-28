@@ -1,8 +1,9 @@
 # Firestore Sequelizer
 [![Build Status](https://travis-ci.org/joemccann/dillinger.svg?branch=master)](https://travis-ci.org/joemccann/dillinger)
 # Simple Firebase ORM
-If you like to use Sequelize and use models in your backend projects try to use FirestoreSequelizer, some features that you have:
+If you like to use Sequelize and use models in your backend projects try to use FirestoreSequelizer, some features:
   - Create Models for your Collections;
+  - Create Single Doc Collections;
   - Construct Select query's like Sequelize using where and orderBy;
   - Default Attributes values for Collection Models;
   - Attributes Validation;
@@ -22,17 +23,6 @@ admin.initializeApp({
 const defineModel = require("firestore-sequelizer");
 ```
 
-### Model Definition
-```javascript
-const User = defineModel("users", {
-    name: "",
-    email: "",
-    admin: {
-    type: "boolean",
-    required: true,
-    },
-});
-```
 ### Model Definition
 ```javascript
 const User = defineModel("users", {

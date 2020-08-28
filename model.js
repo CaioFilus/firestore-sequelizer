@@ -2,7 +2,8 @@ const admin = require("firebase-admin");
 
 function defineModel(name, attributes, opts = {}) {
     opts.subcollections = opts.subcollections || [];
-    opts.disableRequired = opts.disableRequired || false;
+    opts.freeModel = opts.freeModel || false;
+    opts.validateType = opts.validateType || false;
 
     let isDoc = (name.split('/').length % 2) === 1;
 
@@ -56,20 +57,19 @@ function defineModel(name, attributes, opts = {}) {
         item.path = `${name}/:${name}Id/${item.path}`;
         let subName = item.name.charAt(0).toUpperCase() + item.name.slice(1);
         prototypeSubcollections["create" + subName] = function (model, opts = {}) {
-            console.log("aquiiiiiiiiiiiiiiiiii");
             let where = opts.where || {};
             where[`${name}Id`] = this.id;
-            return item.create(model, where);
+            return item.create(model, {where});
         };
         prototypeSubcollections["update" + subName] = function (model, opts = {}) {
             let where = opts.where || {};
             where[`${name}Id`] = this.id;
-            return item.update(model, where);
+            return item.update(model, {where});
         };
         prototypeSubcollections["delete" + subName] = function (opts = {}) {
             let where = opts.where || {};
             where[`${name}Id`] = this.id;
-            return item.delete(where);
+            return item.delete({where});
         };
 
 
@@ -104,7 +104,7 @@ function defineModel(name, attributes, opts = {}) {
             }
 
             //Add Getters/Setters to non mapped attributes
-            if (opts.disableRequired) {
+            if (opts.freeModel) {
                 let newProperties = {};
                 for (let key in this.data) {
                     if (this.__attributes[key] === undefined) {
@@ -148,15 +148,18 @@ function defineModel(name, attributes, opts = {}) {
             );
         }
 
-        static create(model, {where} = {where: {}}) {
+        static create(model, opts = {where: {}}) {
+            let where = opts.where || {};
             let formatedModel = Model.__formatModel(model, true);
+            console.log('path', where);
             return admin.firestore().collection(Model.getPath(where))
                 .add(formatedModel).then((snap) => {
                     return new Model(formatedModel, snap)
                 });
         };
 
-        static update = (model, {where} = {where: {id: 0}}) => {
+        static update = (model, opts = {where: {id: 0}}) => {
+            let where = opts.where || {id: 0};
             let formatedModel = Model.__formatModel(model);
             for (let att in Model.attributes) {
                 if (model[att] !== undefined) {
@@ -255,28 +258,27 @@ function defineModel(name, attributes, opts = {}) {
         };
 
         static __formatModel(model, require) {
-            let formatedModel = {};
+            let formatedModel = opts.freeModel ? model : {};
             for (let att in Model.attributes) {
-                if (require && opts.disableRequired) {
-                    if ((Model.attributes[att].required && model[att] === undefined) ||
-                        (typeof model[att] !== Model.attributes[att].type)) {
-                        throw new Error("Field " + att + " required");
-                    } else if (model[att] === undefined) {
-                        formatedModel[att] = Model.attributes[att].default;
-                    } else {
-                        formatedModel[att] = model[att];
-                    }
-                } else if (require && !opts.disableRequired) {
-                    if (model[att] === undefined) {
-                        formatedModel[att] = Model.attributes[att].default;
-                    } else {
-                        formatedModel[att] = model[att];
-                    }
+                if ((Model.attributes[att].required && model[att] === undefined) ||
+                    (typeof model[att] !== Model.attributes[att].type && opts.validateType)) {
+                    throw new Error("Field " + att + " required");
+                } else if (model[att] === undefined) {
+                    formatedModel[att] = Model.attributes[att].default;
                 } else {
-                    if (model[att] !== undefined) {
-                        formatedModel[att] = model[att];
-                    }
+                    formatedModel[att] = model[att];
                 }
+                // } else if (require && opts.freeModel) {
+                //     if (model[att] === undefined) {
+                //         formatedModel[att] = Model.attributes[att].default;
+                //     } else {
+                //         formatedModel[att] = model[att];
+                //     }
+                // } else {
+                //     if (model[att] !== undefined) {
+                //         formatedModel[att] = model[att];
+                //     }
+                // }
             }
             return formatedModel;
         }
