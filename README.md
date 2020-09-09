@@ -92,9 +92,10 @@ const User = defineModel("users", {
     },
 }, {subcollections: [CashRegister]});
 let user = await User.findOne({where:{id: "XsYsmvl3scnadAs"}});
+let users = await User.findAll({where:{name: "Johnny"}});
 user.createCashRegister({value: 0})
 user.updateCashRegister({value: 56})
-user.createCashRegister({where: {id: "23sdanKSsnfeo32Js"}})
+user.deleteCashRegister({where: {id: "23sdanKSsnfeo32Js"}})
 ```
 
 

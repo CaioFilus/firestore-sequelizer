@@ -56,22 +56,40 @@ function defineModel(name, attributes, opts = {}) {
     for (let item of opts.subcollections) {
         item.path = `${name}/:${name}Id/${item.path}`;
         let subName = item.name.charAt(0).toUpperCase() + item.name.slice(1);
+
         prototypeSubcollections["create" + subName] = function (model, opts = {}) {
-            let where = opts.where || {};
-            where[`${name}Id`] = this.id;
-            return item.create(model, {where});
+            opts.where = opts.where || {};
+            opts.where[`${name}Id`] = this.id;
+            return item.create(model, opts);
+        };
+        prototypeSubcollections["findAll" + subName] = function (model, opts = {}) {
+            opts.where = opts.where || {};
+            opts.where[`${name}Id`] = this.id;
+            return item.findAll(opts);
+        };
+        prototypeSubcollections["findOne" + subName] = function (model, opts = {}) {
+            opts.where = opts.where || {};
+            opts.where[`${name}Id`] = this.id;
+            return item.findOne(opts);
         };
         prototypeSubcollections["update" + subName] = function (model, opts = {}) {
-            let where = opts.where || {};
-            where[`${name}Id`] = this.id;
-            return item.update(model, {where});
+            opts.where = opts.where || {};
+            opts.where[`${name}Id`] = this.id;
+            return item.update(model, opts);
         };
         prototypeSubcollections["delete" + subName] = function (opts = {}) {
-            let where = opts.where || {};
-            where[`${name}Id`] = this.id;
-            return item.delete({where});
+            opts.where = opts.where || {};
+            opts.where[`${name}Id`] = this.id;
+            return item.delete(opts);
         };
-
+        prototypeSubcollections["destroy" + subName] = function () {
+            opts.where = opts.where || {};
+            opts.where[`${name}Id`] = this.id;
+            return item.docIds(opts).then(result => {
+                let deletePromises = result.map(value => value.destroy());
+                return Promise.all(deletePromises);
+            });
+        };
 
         subcollections[subName] = item;
     }
@@ -92,6 +110,7 @@ function defineModel(name, attributes, opts = {}) {
                 this.id = model.id;
             } else {
                 this.data = model;
+                this.__old = {...model};
                 this.ref = ref;
                 this.id = ref.id;
             }
@@ -122,12 +141,22 @@ function defineModel(name, attributes, opts = {}) {
             }
         }
 
+        increment(field, value = 1) {
+            return this.ref.update({
+                [field]: admin.firestore.FieldValue.increment(value)
+            });
+        }
+
         destroy() {
             return this.ref.delete();
         }
 
-        save() {
-            return this.ref.update(this.data);
+        save(setModel = false) {
+            if (!setModel) {
+                return this.ref.update(this.data);
+            } else {
+                return this.ref.set(this.data);
+            }
         };
 
         rollback() {
@@ -148,10 +177,16 @@ function defineModel(name, attributes, opts = {}) {
             );
         }
 
-        static create(model, opts = {where: {}}) {
+        static create(model, opts = {}) {
             let where = opts.where || {};
+            let id = opts.id;
             let formatedModel = Model.__formatModel(model, true);
-            console.log('path', where);
+            if (id !== undefined) {
+                return admin.firestore().collection(Model.getPath(where)).doc(id)
+                    .set(formatedModel).then((snap) => {
+                        return new Model(formatedModel, snap)
+                    });
+            }
             return admin.firestore().collection(Model.getPath(where))
                 .add(formatedModel).then((snap) => {
                     return new Model(formatedModel, snap)
@@ -218,9 +253,9 @@ function defineModel(name, attributes, opts = {}) {
             }
             return builder.limit(1).get().then((snap) => querySnapToModel(snap, true));
         };
-        static findAll = ({where, order} = {}) => {
-            where = where || {};
-            order = order || [];
+        static findAll = (opts = {}) => {
+            let where = opts.where || {};
+            let order = opts.order || [];
             if (!isDoc) {
                 return admin.firestore().doc(Model.getPath(where)).get()
                     .then((snap) => querySnapToModel(snap));
@@ -235,7 +270,6 @@ function defineModel(name, attributes, opts = {}) {
                 builder = builder.orderBy(item[0], item[1] || "asc");
             }
             return builder.get().then((doc) => {
-                console.log(doc.docs);
                 return querySnapToModel(doc);
             });
         };
@@ -255,6 +289,14 @@ function defineModel(name, attributes, opts = {}) {
                 return result;
             });
 
+        };
+
+        static docIds(opts = {}) {
+            let where = opts.where || {};
+            let builder = admin.firestore().collection(Model.getPath(where));
+            return builder.listDocuments().then(result => {
+                return result.map(value => new Model({}, value));
+            });
         };
 
         static __formatModel(model, require) {
