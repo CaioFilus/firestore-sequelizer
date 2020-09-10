@@ -260,9 +260,17 @@ function defineModel(name, attributes, opts = {}) {
                 return admin.firestore().doc(Model.getPath(where)).get()
                     .then((snap) => querySnapToModel(snap));
             }
+            if (Array.isArray(where.id)) {
+                let newWhere = {...where};
+                delete newWhere.id;
+                return admin.firestore().collection(Model.getPath(newWhere)).where(admin.firestore.FieldPath.documentId(), 'in', where.id).get().then((doc) => {
+                    return querySnapToModel(doc);
+                });
+            }
+
             let builder = admin.firestore().collection(Model.getPath(where));
             for (let item in where) {
-                if (!item.endsWith("Id")) {
+                if (!item.toUpperCase().endsWith("ID")) {
                     builder.where(item, "==", where[item]);
                 }
             }
