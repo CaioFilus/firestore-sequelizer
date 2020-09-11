@@ -1,4 +1,15 @@
-const admin = require("firebase-admin");
+let admin = null;
+
+function initializeApp(options) {
+    try {
+        admin.instanceId();
+        admin = options
+    } catch (e) {
+        const firebaseAdmin = require('firebase-admin');
+        firebaseAdmin.initializeApp(options);
+        admin = firebaseAdmin;
+    }
+}
 
 function defineModel(name, attributes, opts = {}) {
     opts.subcollections = opts.subcollections || [];
@@ -341,4 +352,4 @@ function defineModel(name, attributes, opts = {}) {
     return Model;
 }
 
-module.exports = defineModel;
+module.exports = {defineModel, initializeApp};

@@ -16,15 +16,17 @@ If you like to use Sequelize and use models in your backend projects try to use 
 To use lib just start your firebase-admin normally.
 ```javascript
 const admin = require("firebase-admin");
+const firebaseSequelizer = require("firestore-sequelizer");
 admin.initializeApp({
         credential: admin.credential.cert(serviceAccount),
         databaseURL: "..."
     });
-const defineModel = require("firestore-sequelizer");
+firebaseSequelizer.initializeApp(admin);
 ```
 
 ### Model Definition
 ```javascript
+const {defineModel} = require("firestore-sequelizer");
 const User = defineModel("users", {
     name: "",
     email: "",
