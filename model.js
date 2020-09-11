@@ -179,9 +179,10 @@ function defineModel(name, attributes, opts = {}) {
 
         static create(model, opts = {}) {
             let where = opts.where || {};
-            let id = opts.id;
+            let id = opts.id || model.id;
             let formatedModel = Model.__formatModel(model, true);
             if (id !== undefined) {
+                delete model.id;
                 return admin.firestore().collection(Model.getPath(where)).doc(id)
                     .set(formatedModel).then((snap) => {
                         return new Model(formatedModel, snap)
