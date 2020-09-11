@@ -2,7 +2,7 @@ let admin = null;
 
 function initializeApp(options) {
     try {
-        admin.instanceId();
+        options.instanceId();
         admin = options
     } catch (e) {
         const firebaseAdmin = require('firebase-admin');
