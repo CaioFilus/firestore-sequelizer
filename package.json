@@ -1,6 +1,6 @@
 {
   "name": "firestore-sequelizer",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "A simple orm Firestore to feels like in Sequelize",
   "main": "model.js",
   "repository": {

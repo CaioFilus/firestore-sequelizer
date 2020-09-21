@@ -256,8 +256,14 @@ function defineModel(name, attributes, opts = {}) {
             }
             builder = builder.collection(name);
             for (let item in where) {
-                if (!item.endsWith("Id")) {
-                    builder = builder.where(item, "==", where[item]);
+                if (!item.toUpperCase().endsWith("ID")) {
+                    if (typeof where[item] === "object") {
+                        let operation = where[item].operation || "==";
+                        let value = where[item].value || "";
+                        builder.where(item, operation, value);
+                    } else {
+                        builder.where(item, "==", where[item]);
+                    }
                 }
             }
             for (let item of order) {
@@ -283,7 +289,13 @@ function defineModel(name, attributes, opts = {}) {
             let builder = admin.firestore().collection(Model.getPath(where));
             for (let item in where) {
                 if (!item.toUpperCase().endsWith("ID")) {
-                    builder.where(item, "==", where[item]);
+                    if (typeof where[item] === "object") {
+                        let operation = where[item].operation || "==";
+                        let value = where[item].value || "";
+                        builder.where(item, operation, value);
+                    } else {
+                        builder.where(item, "==", where[item]);
+                    }
                 }
             }
             for (let item of order) {
